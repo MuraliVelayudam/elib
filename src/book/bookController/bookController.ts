@@ -4,12 +4,14 @@ import path from 'node:path'
 import createHttpError from 'http-errors'
 import Book from '../bookModel/bookModel'
 import fs from 'node:fs'
+import { AuthInterface } from '../../middlewares/authorization'
 
 const createBook = async (req: Request, res: Response, next: NextFunction) => {
     const { title, genre } = req.body
 
     try {
         const files = req.files as { [fieldname: string]: Express.Multer.File[] }
+        const _req = req as AuthInterface
 
         // Image Cloudinary
 
@@ -41,7 +43,7 @@ const createBook = async (req: Request, res: Response, next: NextFunction) => {
             genre,
             coverImage: imageUpload.secure_url,
             file: bookUpload.secure_url,
-            author: '663e708374f4b815d197bd32',
+            author: _req.userId,
         })
 
         try {
