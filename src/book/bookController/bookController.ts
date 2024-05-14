@@ -133,4 +133,30 @@ const bookUpdate = async (req: Request, res: Response, next: NextFunction) => {
     res.status(200).json(updateBook)
 }
 
-export { createBook, bookUpdate }
+const getAllBook = async (req: Request, res: Response, next: NextFunction) => {
+    try {
+        const books = await Book.find()
+        res.status(200).json({ books })
+    } catch (err) {
+        return next(createHttpError(500, 'Error Occurred While Getting Books'))
+    }
+}
+
+const getBook = async (req: Request, res: Response, next: NextFunction) => {
+    try {
+        const bookId = req.params.bookId
+
+        const book = await Book.findById({ _id: bookId })
+
+        if (!book) {
+            const errors = createHttpError(500, 'Book Not Found')
+            return next(errors)
+        }
+
+        res.status(200).json({ book })
+    } catch (err) {
+        return next(createHttpError(400, 'Error Occurred While Getting Book'))
+    }
+}
+
+export { createBook, bookUpdate, getAllBook, getBook }
