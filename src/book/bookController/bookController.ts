@@ -59,5 +59,78 @@ const createBook = async (req: Request, res: Response, next: NextFunction) => {
         return next(createHttpError(500, 'Error Occurred while Uploading Files'))
     }
 }
+// Book Update
 
-export { createBook }
+const bookUpdate = async (req: Request, res: Response, next: NextFunction) => {
+    const { title, genre } = req.body
+    const bookId = req.params.bookId
+    const _req = req as AuthInterface
+
+    const book = await Book.findById(bookId)
+
+    if (!book) {
+        const errors = createHttpError(401, 'Book Not Found')
+        return next(errors)
+    }
+
+    if (book.author.toString() !== _req.userId) {
+        const errors = createHttpError(403, 'Not Authorized')
+    }
+
+    const files = req.files as { [fieldname: string]: Express.Multer.File[] }
+
+    // Image Upload
+
+    let updateCoverImage = ''
+    if (files.coverImage) {
+        const updateCoverImageMimeType = files.coverImage[0].mimetype.split('/').at(-1)
+        const updateCoverImageFileName = files.coverImage[0].filename
+        const updateCoverImageFilePath = path.resolve(
+            __dirname,
+            '../../../public/data/uploads',
+            updateCoverImageFileName
+        )
+
+        updateCoverImage = updateCoverImageFileName
+        const updateCoverImageUploads = await cloudinary.uploader.upload(updateCoverImageFilePath, {
+            filename_override: updateCoverImageFileName,
+            folder: 'Book-Covers',
+            format: updateCoverImageMimeType,
+        })
+        updateCoverImage = updateCoverImageUploads.secure_url
+        await fs.promises.unlink(updateCoverImageFilePath)
+    }
+
+    let updateFilePdf = ''
+    if (files.file) {
+        const updateFilePdfMimetype = files.file[0].mimetype.split('/').at(-1)
+        const updateFilePdfFileName = files.file[0].filename
+        const updateFilePdfFilePath = path.resolve(__dirname, '../../../public/data/uploads', updateFilePdfFileName)
+
+        updateFilePdf = updateFilePdfFileName
+        const updateFilePdfUpload = await cloudinary.uploader.upload(updateFilePdfFilePath, {
+            resource_type: 'raw',
+            filename_override: updateFilePdfFileName,
+            folder: 'Book-Pdfs',
+            format: updateFilePdfMimetype,
+        })
+
+        updateFilePdf = updateFilePdfUpload.secure_url
+        await fs.promises.unlink(updateFilePdfFilePath)
+    }
+
+    const updateBook = await Book.findByIdAndUpdate(
+        { _id: bookId },
+        {
+            title: title,
+            genre: genre,
+            coverImage: updateCoverImage ? updateCoverImage : book.coverImage,
+            file: updateFilePdf ? updateFilePdf : book.file,
+        },
+        { new: true }
+    )
+
+    res.status(200).json(updateBook)
+}
+
+export { createBook, bookUpdate }
