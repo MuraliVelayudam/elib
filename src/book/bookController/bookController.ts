@@ -196,7 +196,6 @@ const deleteBook = async (req: Request, res: Response, next: NextFunction) => {
     const filePdfsName = filePdfSplit.at(-1)
 
     const pdfPublicId = `${fileFolderName}/${filePdfsName}`
-    console.log(pdfPublicId)
 
     try {
         await cloudinary.uploader.destroy(coverImagePublicId)
