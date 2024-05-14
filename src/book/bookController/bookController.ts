@@ -193,13 +193,14 @@ const deleteBook = async (req: Request, res: Response, next: NextFunction) => {
 
     const filePdfSplit = book.file.split('/')
     const fileFolderName = filePdfSplit.at(-2)
-    const filePdfsName = filePdfSplit.at(-1)?.split('.').at(-2)
+    const filePdfsName = filePdfSplit.at(-1)
 
     const pdfPublicId = `${fileFolderName}/${filePdfsName}`
+    console.log(pdfPublicId)
 
     try {
         await cloudinary.uploader.destroy(coverImagePublicId)
-        await cloudinary.uploader.destroy(pdfPublicId)
+        await cloudinary.uploader.destroy(pdfPublicId, { resource_type: 'raw' })
     } catch (err) {
         const errors = createHttpError(500, 'Error in Deleting Files In Cloudinary')
         return next(errors)
