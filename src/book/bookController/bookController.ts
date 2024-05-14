@@ -133,6 +133,8 @@ const bookUpdate = async (req: Request, res: Response, next: NextFunction) => {
     res.status(200).json(updateBook)
 }
 
+// Get All Books
+
 const getAllBook = async (req: Request, res: Response, next: NextFunction) => {
     try {
         const books = await Book.find()
@@ -141,6 +143,8 @@ const getAllBook = async (req: Request, res: Response, next: NextFunction) => {
         return next(createHttpError(500, 'Error Occurred While Getting Books'))
     }
 }
+
+// Get Single Book
 
 const getBook = async (req: Request, res: Response, next: NextFunction) => {
     try {
@@ -159,4 +163,51 @@ const getBook = async (req: Request, res: Response, next: NextFunction) => {
     }
 }
 
-export { createBook, bookUpdate, getAllBook, getBook }
+// Delete Book
+
+const deleteBook = async (req: Request, res: Response, next: NextFunction) => {
+    const bookId = req.params.bookId
+
+    const book = await Book.findById({ _id: bookId })
+
+    if (!book) {
+        return next(createHttpError(500, 'Book Not Found'))
+    }
+
+    const _req = req as AuthInterface
+
+    if (book.author.toString() !== _req.userId) {
+        const errors = createHttpError(500, 'Not Authorized')
+        return next(errors)
+    }
+
+    // Image
+
+    const coverImageSplit = book.coverImage.split('/')
+    const ImageFolderName = coverImageSplit.at(-2)
+    const coverImageName = coverImageSplit.at(-1)?.split('.').at(-2)
+
+    const coverImagePublicId = `${ImageFolderName}/${coverImageName}`
+
+    // File
+
+    const filePdfSplit = book.file.split('/')
+    const fileFolderName = filePdfSplit.at(-2)
+    const filePdfsName = filePdfSplit.at(-1)?.split('.').at(-2)
+
+    const pdfPublicId = `${fileFolderName}/${filePdfsName}`
+
+    try {
+        await cloudinary.uploader.destroy(coverImagePublicId)
+        await cloudinary.uploader.destroy(pdfPublicId)
+    } catch (err) {
+        const errors = createHttpError(500, 'Error in Deleting Files In Cloudinary')
+        return next(errors)
+    }
+
+    await Book.findByIdAndDelete({ _id: bookId })
+
+    res.status(204).json({ message: 'Delete Successfully' })
+}
+
+export { createBook, bookUpdate, getAllBook, getBook, deleteBook }
