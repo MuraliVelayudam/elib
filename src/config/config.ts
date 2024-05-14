@@ -11,6 +11,7 @@ const _config = {
     cloudName: process.env.CLOUD_NAME,
     cloudApiKey: process.env.CLOUD_API_KEY,
     cloudSecreteKy: process.env.CLOUD_API_SECRET,
+    frontendDomin: process.env.FRONTEND_URL,
 }
 
 export const config = Object.freeze(_config)
